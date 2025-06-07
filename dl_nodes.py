@@ -70,36 +70,48 @@ class CLIPRandom:
         cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
         return ([[cond, {"pooled_output": pooled}]], )
         
+
 class UMT5Random:
     """
-    Produce random UMT5/T5 token conditionings.
-    • n_tokens …… number of random IDs
-    • random_weights …… if true, each token gets a weight ∈ [-1, +1]
-    • use_anchor …… if false, <eos> is omitted
+    Random UMT5/T5 conditioning generator.
+
+    Widgets
+    ▸ n_tokens …… number of random IDs (2…vocab_size-1)
+    ▸ padding   …… number of explicit <pad> (=0⃗) tokens to append
+    ▸ random_weights …… if true, sample weights in the range [-1, +1]
+    ▸ use_anchor …… include <eos> after the random IDs
     """
 
-    RETURN_TYPES = ("CONDITIONING",)
-    FUNCTION     = "encode"
-    CATEGORY     = "conditioning"
+    # two outputs: conditioning + a human-readable string
+    RETURN_TYPES  = ("CONDITIONING", "STRING")
+    RETURN_NAMES  = ("conditioning", "tokens_view")
+    FUNCTION      = "encode"
+    CATEGORY      = "conditioning"
 
     # -------- sockets & widgets -------------------------------------
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "umt5": ("CLIP",),                # loader output
-                "n_tokens": ("INT", {             # random ID count
+                "umt5": ("CLIP",),
+                "n_tokens": ("INT", {
                     "default": 3, "min": 0,
                     "max": 511, "step": 1,
                     "display": "number",
                 }),
-                "random_weights": ("BOOLEAN", {   # NEW
+                "padding": ("INT", {                   # NEW
+                    "default": 0, "min": 0,
+                    "max": 511, "step": 1,
+                    "display": "number",
+                    "tooltip": "How many <pad> (zero) tokens to append",
+                }),
+                "random_weights": ("BOOLEAN", {
                     "default": False,
                     "tooltip": "If true, sample token weights in [-1, 1]",
                 }),
-                "use_anchor": ("BOOLEAN", {       # NEW
+                "use_anchor": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "If false, drop the <eos> anchor token",
+                    "tooltip": "If false, drops the <eos> anchor token",
                 }),
             }
         }
@@ -118,47 +130,68 @@ class UMT5Random:
             return tok.get_vocab_size(with_added_tokens=True)
         if hasattr(tok, "get_vocab"):
             return len(tok.get_vocab())
-        return 250_112                               # fallback
+        return 250_112
 
     # -------- main ---------------------------------------------------
-    def encode(self, umt5, n_tokens, random_weights=False, use_anchor=True):
+    def encode(
+        self,
+        umt5,
+        n_tokens: int,
+        padding: int,
+        random_weights: bool = False,
+        use_anchor: bool = True,
+    ):
         tok         = umt5.tokenizer
         vocab_size  = self._get_vocab_size(tok)
         pad_id      = getattr(tok, "pad_token_id", 0)
         eos_id      = getattr(tok, "eos_token_id", 1)
         model_max   = getattr(tok, "model_max_length", 512)
 
-        # ------------ dynamic max_len --------------------------------
         extra = 1 if use_anchor else 0
-        max_len = n_tokens + extra                       # (1)
+        max_len = n_tokens + extra + padding
 
+        # stop runaway values
         if max_len > model_max:
-            n_tokens = model_max - extra                 # avoid overflow
+            overflow = max_len - model_max
+            # trim padding first, then random IDs
+            trim_pad = min(padding, overflow)
+            padding -= trim_pad
+            overflow -= trim_pad
+            n_tokens = max(0, n_tokens - overflow)
             max_len  = model_max
 
-        # ------------ build ID list ----------------------------------
+        # ---- assemble ID list ---------------------------------------
         ids = [random.randint(2, vocab_size - 1) for _ in range(n_tokens)]
         if use_anchor:
             ids.append(eos_id)
+        ids += [pad_id] * padding
 
-        # no explicit pads needed: sequence already == max_len
-        # (but we keep a safety pad in case n_tokens is 0)
-        ids += [pad_id] * max(0, max_len - len(ids))
-
-        # ------------ assign weights ---------------------------------
+        # ---- assign weights -----------------------------------------
         if random_weights:
             token_list = [(tid, random.uniform(-1.0, 1.0)) for tid in ids]
         else:
             token_list = [(tid, 1.0) for tid in ids]
 
-        # ------------ key matches inner model ------------------------
+        # ---- conditioning dict key ----------------------------------
         clip_key = getattr(getattr(umt5, "cond_stage_model", umt5),
                            "clip_name", "l")
-        tokens   = {clip_key: [token_list]}
+        tokens = {clip_key: [token_list]}
 
         conditioning = umt5.encode_from_tokens_scheduled(tokens)
-        return (conditioning,)
-    
+
+        # ---- pretty print for UI -----------------------------------
+        id_strings = tok.convert_ids_to_tokens(ids, skip_special_tokens=False)
+        if random_weights:
+            pretty = " ".join(
+                f"{t}({w:+.2f})"
+                for (t, w) in zip(id_strings, (tw[1] for tw in token_list))
+            )
+        else:
+            pretty = " ".join(id_strings)
+
+        return (conditioning, pretty)
+
+
 NODE_CLASS_MAPPINGS = {
     "String2List": String2ListNode,
     "CLIPRandom": CLIPRandom,
