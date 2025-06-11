@@ -1,17 +1,12 @@
 # ComfyUI-DLNodes
 
-A small collection of custom **ComfyUI** nodes that are useful for exploring unprompted / aleatoric image generation.
+Couple of custom **ComfyUI** nodes that are useful for exploring unprompted / aleatoric image and video generation.
 
 ---
 
 ## CLIPRandom
 
 Generates a sequence of **random CLIP tokens** that can be used in place of the usual *Text Encode* nodes in Stable Diffusion pipelines (both SD 1.x and SDXL).
-
-```mermaid
-flowchart LR
-    UI[Widgets] --> Node[CLIPRandom] --> CLIP[CLIP conditioning]
-```
 
 ### Widgets
 
@@ -21,7 +16,6 @@ flowchart LR
 | `n_tokens` | int | 0 – 75 Number of random tokens to generate. |
 | `random_weights` | bool | If **on**, assigns each token a random weight sampled from **U(-1, 1)**; otherwise all weights are **1.0**. |
 
-The node automatically detects SDXL's two-stream CLIP setup and duplicates the token list for the `"g"` branch when necessary—no user interaction required.
 
 ![Screenshot of CLIPRandom](imgs/cliprandom.png)
 
@@ -29,7 +23,7 @@ The node automatically detects SDXL's two-stream CLIP setup and duplicates the t
 
 ## UMT5Random
 
-Generates **random UMT5 tokens**. Originally intended for [Kijai's WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) "ComfyUI text encoding alternative" workflow, but it can be used anywhere a T5-style text encoder is accepted.
+Generates **random UMT5 tokens**. Mainly intended for [Kijai's WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) "ComfyUI text encoding alternative" workflow, but in theory it can be used anywhere a T5-style text encoder is used.
 
 ![Screenshot of UMT5Random](imgs/umt5random.png)
 
