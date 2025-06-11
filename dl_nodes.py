@@ -45,6 +45,7 @@ class CLIPRandom:
                     "step": 1, #Slider's step
                     "display": "number" # Cosmetic only: display as "number" or "slider"
                 }),
+                "random_weights": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -57,17 +58,27 @@ class CLIPRandom:
 
     CATEGORY = "conditioning"
 
-    def encode(self, clip, n_tokens):
-      
-        token_list = [(49406, 1.0)]
-        for n in range(n_tokens):
-            token_list.append((random.randint(0, 49405),1.0))
-        for n in range(n_tokens,76):
-             token_list.append((49407, 1.0))
-        #breakpoint()
-        tokens = {'l': [token_list]}
-        #print(f" Using tokens {t1},{t2},{t3} " )
-        cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+    def encode(self, clip, n_tokens, random_weights=False):
+        # Build token id list: SOS (49406) + random tokens + padding tokens (49407)
+        token_ids = [49406] + [random.randint(0, 49405) for _ in range(n_tokens)] + [49407] * (76 - n_tokens)
+
+        # Attach weights
+        if random_weights:
+            token_list = [(tid, random.uniform(-1.0, 1.0)) for tid in token_ids]
+        else:
+            token_list = [(tid, 1.0) for tid in token_ids]
+
+        # primary tokens dictionary for typical SD 1.x CLIP
+        tokens = {"l": [token_list]}
+
+        # Try encoding; if model expects both "l" and "g" (e.g., SDXL) fall back
+        try:
+            cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+        except KeyError:
+            # duplicate list for "g" branch required by SDXL CLIP implementation
+            tokens["g"] = [token_list]
+            cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+
         return ([[cond, {"pooled_output": pooled}]], )
         
 class UMT5Random:
