@@ -25,7 +25,7 @@ Generates a sequence of **random CLIP tokens** that can be used in place of the 
 
 Generates **random UMT5 tokens**. Mainly intended for [Kijai's WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) "ComfyUI text encoding alternative" workflow, but in theory it can be used anywhere a T5-style text encoder is used.
 
-![Screenshot of UMT5Random](imgs/umt5random.png)
+![Screenshot of UMT5Random](imgs/umts5random.png)
 
 ### Widgets
 
