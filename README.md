@@ -16,6 +16,11 @@ Generates a sequence of **random CLIP tokens** that can be used in place of the 
 | `n_tokens` | int | 0 – 75 Number of random tokens to generate. |
 | `random_weights` | bool | If **on**, assigns each token a random weight sampled from **U(-1, 1)**; otherwise all weights are **1.0**. |
 
+### Outputs
+
+| Name | Type | Notes |
+|------|------|-------|
+| `conditioning` | CONDITIONING | Conditioning embedding (list wrapper) compatible with downstream nodes. |
 
 ![Screenshot of CLIPRandom](imgs/cliprandom.png)
 
@@ -25,7 +30,7 @@ Generates a sequence of **random CLIP tokens** that can be used in place of the 
 
 Generates **random UMT5 tokens**. Mainly intended for [Kijai's WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) "ComfyUI text encoding alternative" workflow, but in theory it can be used anywhere a T5-style text encoder is used.
 
-![Screenshot of UMT5Random](imgs/umts5random.png)
+![Screenshot of UMT5Random](imgs/umt5random.png)
 
 ### Widgets
 
@@ -36,6 +41,13 @@ Generates **random UMT5 tokens**. Mainly intended for [Kijai's WanVideoWrapper](
 | `padding` | int | 0 – 511 Number of *zero-vector* padding tokens appended after the random sequence (helps "stabilise" the image). |
 | `random_weights` | bool | If **on**, token weights are random in **U(-1, 1)**; otherwise **1.0**. |
 | `use_anchor` | bool | Whether to append the `<eos>` token as a terminator/anchor. |
+
+### Outputs
+
+| Name | Type | Notes |
+|------|------|-------|
+| `conditioning` | CONDITIONING | Conditioning embedding sequence. |
+| `tokens_view` | string | Human-readable representation of the generated token IDs; when `random_weights` is enabled each token is annotated as `token(weight)`. |
 
 ---
 
@@ -50,7 +62,11 @@ Utility node that splits a string into a list using an arbitrary separator.
 | `text` | string | *force input* |
 | `separator` | string | `/` |
 
-Returns: **list[string]**
+### Outputs
+
+| Name | Type | Notes |
+|------|------|-------|
+| list[string] | STRING | List of substrings obtained after splitting input. |
 
 ---
 
