@@ -1,12 +1,12 @@
 # ComfyUI-DLNodes
 
-Couple of custom **ComfyUI** nodes that are useful for exploring unprompted / aleatoric image and video generation.
+Custom **ComfyUI** nodes that can be useful for exploring unprompted / aleatoric image and video generation.
 
 ---
 
 ## CLIPRandom
 
-Generates a sequence of **random CLIP tokens** that can be used in place of the usual *Text Encode* nodes in Stable Diffusion pipelines (both SD 1.x and SDXL).
+Generates a sequence of **random CLIP tokens** that can be used in place of the usual *Text Encode* nodes in Stable Diffusion workflows (SD 1.x and SDXL).
 
 ### Widgets
 
@@ -41,7 +41,7 @@ Generates **random UMT5 tokens**. Mainly intended for [Kijai's WanVideoWrapper](
 
 ## String2List
 
-Utility node that splits a string into a list using an arbitrary separator.
+Utility node that splits a string into a list using an arbitrary separator. 
 
 ### Widgets
 
