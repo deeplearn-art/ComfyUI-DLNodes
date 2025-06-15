@@ -50,7 +50,7 @@ class CLIPRandom:
         }
 
     @classmethod
-    def IS_CHANGED():
+    def IS_CHANGED(cls, *args, **kwargs):
         return float("nan")
 
     RETURN_TYPES = ("CONDITIONING",)
